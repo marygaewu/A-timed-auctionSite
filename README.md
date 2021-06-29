@@ -1,5 +1,5 @@
 ##### A timed auction site the winner is the highest bidder. This is built with reach and react
-Note: words in brackets correspond to variable/const names in the program code.
+
 This auction platform has two kinds of actors, the Auctioneer and the Bidders.
 •	The Auctioner starts initiates the auction, by setting the Starting bid ( staringBid )and the duration of auction (deadline).
 •	The Auctioneer also inputs the Id of the item being auctioned representing the token for the Item.
