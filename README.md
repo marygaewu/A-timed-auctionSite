@@ -1,11 +1,11 @@
 ##### A timed auction site the winner is the highest bidder. This is built with reach and react
 
 This auction platform has two kinds of actors, the Auctioneer and the Bidders.
-*	The Auctioner starts initiates the auction, by setting the Starting bid ( staringBid )and the duration of auction (deadline).
+*	The Auctioner initiates the auction, by setting the Starting bid ( staringBid )and the duration of auction (deadline).
 *	The Auctioneer also inputs the Id of the item being auctioned representing the token for the Item.
-*	Each bidder can is given a chance to place a bid for every placed bid, the system determines the highest (highestBid) Bid and releases the outcome;
+*	Each bidder is given a chance to place a bid for every placed bid, the system determines the highest (highestBid) Bid and releases the outcome;
 *	Then open the window for bids to be placed again by each bidder.
-*	This continues in a cycle until the duratio of the auction is has been exhausted.
+*	This continues in a cycle until the duration of the auction is has been exhausted.
 
 ##### After this,
 *	The winning bidder, performs a transaction,
