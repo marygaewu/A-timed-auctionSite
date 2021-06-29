@@ -198,6 +198,15 @@ ensure_connector_mode () {
     "ALGO-test-dockerized")
       REACH_CONNECTOR_MODE="ALGO-test-dockerized-algod"
       ;;
+    "CFX")
+      REACH_CONNECTOR_MODE="CFX-devnet"
+      ;;
+    "CFX-devnet")
+      REACH_CONNECTOR_MODE="CFX-devnet"
+      ;;
+    "CFX-live")
+      REACH_CONNECTOR_MODE="CFX-live"
+      ;;
   esac
 
   # ensure it is one of the supported things
@@ -209,6 +218,10 @@ ensure_connector_mode () {
     "ALGO-live")
       ;;
     "ALGO-test-dockerized-algod")
+      ;;
+    "CFX-devnet")
+      ;;
+    "CFX-live")
       ;;
     *)
       fatal_unrecognized_connector_mode
@@ -223,6 +236,17 @@ do_whoami () {
   docker info --format '{{.ID}}' 2>/dev/null
 }
 
+has_opt () {
+  opt="$1"
+  shift
+  for X in "$@"; do
+    if [ "$X" = "$opt" ]; then
+      return 1
+    fi
+  done
+  return 0
+}
+
 do_compile () {
     HS=${HERE}/hs
 
@@ -230,25 +254,42 @@ do_compile () {
     # (because what if file names have spaces),
     # but also, sh doesn't have array splicing, so... this.
     # It's a little less mix-and-match
+
+    INT_OPT="--intermediate-files"
+    has_opt "$INT_OPT" "$@"
+    HAS_INT="$?"
+
     reachc_release () {
       stack build && \
         stack exec -- \
               reachc "$@"
     }
     reachc_prof () {
-      stack build --profile --fast && \
-        stack exec --profile -- \
-              reachc --disable-reporting --intermediate-files "$@" +RTS -p
+      if [ "$HAS_INT" = "1" ]; then
+        stack build --profile --fast && \
+          stack exec --profile -- \
+                reachc --disable-reporting "$@" +RTS -p
+      else
+        stack build --profile --fast && \
+          stack exec --profile -- \
+                reachc --disable-reporting --intermediate-files "$@" +RTS -p
+      fi
     }
     reachc_dev () {
-      stack build --fast && \
-        stack exec -- \
-              reachc --disable-reporting --intermediate-files "$@"
+      if [ "$HAS_INT" = "1" ]; then
+        stack build --fast && \
+          stack exec -- \
+                reachc --disable-reporting "$@"
+      else
+        stack build --fast && \
+          stack exec -- \
+                reachc --disable-reporting --intermediate-files "$@"
+      fi
     }
 
     ID=$(do_whoami)
     if [ "$CIRCLECI" = "true" ] && [ -x ~/.local/bin/reachc ]; then
-        ~/.local/bin/reachc --disable-reporting --intermediate-files "$@"
+        ~/.local/bin/reachc --disable-reporting "$@"
 
     elif [ -z "${REACH_DOCKER}" ] && [ -d "${HS}/.stack-work" ] && (which stack > /dev/null 2>&1) ; then
         export STACK_YAML="${HS}/stack.yaml"
@@ -328,11 +369,13 @@ do_init () {
   cat >"${RSH}" <<EOF
 'reach ${REACH_VERSION_SHORT}';
 
-export const main = Reach.App(
-  {}, [Participant('Alice', {}), Participant('Bob', {})], (Alice, Bob) => {
-    // ...
-  }
-);
+export const main = Reach.App(() => {
+  const Alice = Participant('Alice', {});
+  const Bob   = Participant('Bob', {});
+  deploy();
+  // write your program here
+
+});
 EOF
 
   echo writing "$MJS"
@@ -341,7 +384,7 @@ import {loadStdlib} from '@reach-sh/stdlib';
 import * as backend from './build/${APP}.main.mjs';
 
 (async () => {
-  const stdlib = await loadStdlib();
+  const stdlib = await loadStdlib(process.env);
   const startingBalance = stdlib.parseCurrency(100);
 
   const alice = await stdlib.newTestAccount(startingBalance);
@@ -480,6 +523,8 @@ version: '3.4'
 x-app-base: &app-base
   image: ${IMAGE_TAG}
 services:
+  devnet-cfx:
+    image: reachsh/devnet-cfx:${REACH_VERSION}
   ethereum-devnet:
     image: reachsh/ethereum-devnet:${REACH_VERSION}
   algorand-devnet:
@@ -540,6 +585,24 @@ services:
       - ALGO_PORT=4180
       - ALGO_INDEXER_SERVER=http://algorand-devnet
       - ALGO_INDEXER_PORT=8980
+  ${SERVICE}-CFX-devnet:
+    <<: *app-base
+    depends_on:
+      - devnet-cfx
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=CFX-devnet
+      - CFX_DEBUG
+      - CFX_NODE_URI=http://devnet-cfx:12537
+      - CFX_NETWORK_ID=999
+  ${SERVICE}-CFX-live:
+    <<: *app-base
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=CFX-live
+      - CFX_DEBUG
+      - CFX_NODE_URI
+      - CFX_NETWORK_ID
   ${SERVICE}-: *default-app
   ${SERVICE}: *default-app
 EOF
@@ -796,9 +859,9 @@ do_run () {
     reach_make_f build
     # Run from Makefile if present and not "run from reach"
     if [ -f Makefile ] && ! $RUN_FROM_REACH && ! $ANY_CUSTOMIZATION; then
-      reach_make run
+      reach_make run "$@"
     else
-      reach_make_f run
+      reach_make_f run "$@"
     fi
   else
     # It is assumed that if this is being called from within reach run,
@@ -835,18 +898,20 @@ react_compose () {
     DEPENDS_ON=''
   else
     case "$REACH_CONNECTOR_MODE" in
+      CFX*)
+        DEPENDS_ON='
+    depends_on:
+      - devnet-cfx
+'
+        ;;
       ALGO*)
         DEPENDS_ON='
-    # Does not technically depend on algorand-devnet.
-    # This is just to get it to run both.
     depends_on:
       - algorand-devnet
 '
         ;;
       ETH*)
         DEPENDS_ON='
-    # Does not technically depend on ethereum-devnet.
-    # This is just to get it to run both.
     depends_on:
       - ethereum-devnet
 '
@@ -876,6 +941,10 @@ $DEPENDS_ON
     image: reachsh/ethereum-devnet:${REACH_VERSION}
     ports:
       - '8545:8545'
+  devnet-cfx:
+    image: reachsh/devnet-cfx:${REACH_VERSION}
+    ports:
+      - '12537:12537'
   algorand-devnet:
     image: reachsh/algorand-devnet:${REACH_VERSION}
     depends_on:
@@ -906,7 +975,7 @@ EOF
 
 fatal_unrecognized_connector_mode_react () {
   echo "Unrecognized REACH_CONNECTOR_MODE=$REACH_CONNECTOR_MODE"
-  echo "Supported modes for reach react are: ETH, ALGO"
+  echo "Supported modes for reach react are: ETH, ALGO, CFX"
   exit 1
 }
 
@@ -914,6 +983,7 @@ ensure_connector_mode_browser () {
   # Makes sure to set REACH_CONNECTOR_MODE to one of:
   # * ETH-browser
   # * ALGO-browser
+  # * CFX-browser
   # $WHAT-$WHERE
 
   # TODO: distinguish between BLAH-browser-dockerized and browser-remote
@@ -927,6 +997,9 @@ ensure_connector_mode_browser () {
     "ALGO")
       REACH_CONNECTOR_MODE="ALGO-browser"
       ;;
+    "CFX")
+      REACH_CONNECTOR_MODE="CFX-browser"
+      ;;
   esac
 
   # ensure it is one of the supported things
@@ -934,6 +1007,8 @@ ensure_connector_mode_browser () {
     "ETH-browser")
       ;;
     "ALGO-browser")
+      ;;
+    "CFX-browser")
       ;;
     *)
       fatal_unrecognized_connector_mode_react
@@ -951,6 +1026,11 @@ do_react () {
     USE_EXISTING_DEVNET=true
   fi
   case "$REACH_CONNECTOR_MODE" in
+    CFX*)
+      if command -v lsof >/dev/null && lsof -i tcp:12537 | grep LISTEN >/dev/null ; then
+        USE_EXISTING_DEVNET=true
+      fi
+      ;;
     ALGO*)
       if command -v lsof >/dev/null && lsof -i tcp:4180 | grep LISTEN >/dev/null ; then
         USE_EXISTING_DEVNET=true
@@ -1009,6 +1089,17 @@ EOF
     DEVNET_NAME=algorand-devnet
     ;;
 
+    CFX*)
+  cat<<EOF > docker-compose.yml.devnet
+version: '3.4'
+services:
+  devnet-cfx:
+    image: reachsh/devnet-cfx:latest
+    ports:
+      - '12537:12537'
+EOF
+    DEVNET_NAME=devnet-cfx
+    ;;
     ETH*)
   cat<<EOF > docker-compose.yml.devnet
 version: '3.4'
@@ -1041,6 +1132,8 @@ rpc_server_compose () {
       - ALGO_INDEXER_SERVER
       - ALGO_INDEXER_PORT
       - ALGO_FAUCET_PASSPHRASE
+      - CFX_NODE_URI
+      - CFX_NETWORK_ID
 '
     ;;
 
@@ -1051,6 +1144,7 @@ rpc_server_compose () {
       - ETH_NODE_URI=http://ethereum-devnet:8545
 '
       else
+        # XXX CFX
         if $IS_ALGO ; then
           DEPENDS_ON='
       - ALGO_SERVER=http://algorand-devnet
@@ -1357,7 +1451,7 @@ do_docker_reset () {
   echo '...done'
 }
 
-REACH_IMAGES='reach ethereum-devnet algorand-devnet runner react-runner rpc-server'
+REACH_IMAGES='reach ethereum-devnet algorand-devnet devnet-cfx runner react-runner rpc-server'
 
 do_update() {
   for IMG in $REACH_IMAGES ; do
