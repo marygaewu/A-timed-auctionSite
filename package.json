@@ -1,0 +1,76 @@
+{
+  "name": "auctionsite",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@reach-sh/stdlib": "^0.1.2-rc.44",
+    "@testing-library/jest-dom": "^5.11.4",
+    "@testing-library/react": "^11.1.0",
+    "@testing-library/user-event": "^12.1.10",
+    "@coreui/coreui": "^2.0.3",
+    "@coreui/coreui-plugin-chartjs-custom-tooltips": "^1.2.0",
+    "@coreui/react": "^2.5.8",
+    "@fortawesome/fontawesome-svg-core": "^1.2.0-14",
+    "@fortawesome/free-solid-svg-icons": "^5.1.0-11",
+    "@fortawesome/react-fontawesome": "0.1.0-11",
+    "@material-ui/core": "^4.11.4",
+    "chart.js": "^2.7.2",
+    "i": "^0.3.6",
+    "jquery": "^3.6.0",
+    "mdbreact": "^4.5.0",
+    "npm": "^6.1.0",
+    "popper.js": "^1.16.1",
+    "prop-types": "^15.6.2",
+    "pubnub": "^4.21.2",
+    "pubnub-react": "^1.2.0",
+    "react": "^16.4.1",
+    "react-bootstrap": "^0.32.1",
+    "react-bootstrap-inputs": "^0.0.1",
+    "react-chartist": "^0.13.1",
+    "react-chartjs-2": "^2.7.2",
+    "react-dom": "^16.4.1",
+    "react-iframe": "^1.2.0",
+    "react-image": "^4.0.3",
+    "react-loadable": "^5.4.0",
+    "react-new-window": "0.0.7",
+    "react-scripts": "^4.0.3",
+    "resolve-url-loader": "^4.0.0",
+    "bootstrap": "^4.6.0",
+    "package.json": "^2.0.1",
+    "react": "^16.14.0",
+    "react-bootstrap": "^1.5.2",
+    "pubnub": "^4.32.1",
+    "pubnub-react": "^2.1.0",
+    "react-copy-to-clipboard": "^5.0.3",
+    "react-dom": "^17.0.2",
+    "react-router-bootstrap": "^0.25.0",
+    "react-router-dom": "^5.2.0",
+    "react-scripts": "4.0.3",
+    "web-vitals": "^1.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "proxy": "https://www.algorand.com:8000"
+}
