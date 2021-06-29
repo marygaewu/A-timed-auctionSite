@@ -8,7 +8,7 @@ Project uses React Hooks and Context for state management and Bootstrap for styl
 
 ## Instructions
 * Node.js must be installed in your system.
-* After cloning the project with `$  git clone https://CharaD7@bitbucket.org/Mary201/auctionsite.git; cd auctionsite`
+* After cloning the project with `$  git clone https://github.com/marygaewu/A-timed-auctionSite.git; cd auctionsite`
 * use `$ npm install package.json` to install dependencies
 * You need a copy of reach to get the devnet running. If you don't have one already
 * `$ curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o reach ; chmod +x reach`
