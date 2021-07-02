@@ -26,4 +26,4 @@ yarn-error.log*
 
 # vscode buffer
 # .vscode
-node_modules
+
