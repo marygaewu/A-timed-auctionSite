@@ -99,5 +99,4 @@ export const main = Reach.App(
         interact.seeWinningBid(winner, latestPrice);
     });
 
-
 });
